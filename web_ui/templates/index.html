@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Python Web Terminal</title>
+    <style>
+        body {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: monospace;
+            margin: 0;
+            padding: 0;
+        }
+        #terminal {
+            width: 80%;
+            margin: 20px auto;
+            background: black;
+            padding: 10px;
+            border-radius: 10px;
+            min-height: 400px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .input-line {
+            display: flex;
+            margin-bottom: 2px;
+        }
+        .prompt {
+            white-space: pre;
+        }
+        .cmd-input {
+            flex: 1;
+            background: black;
+            color: #00ff00;
+            border: none;
+            outline: none;
+            font-family: monospace;
+            font-size: 16px;
+        }
+        #suggestions {
+            color: yellow;
+            font-size: 14px;
+            position: absolute;
+            z-index: 1000;
+            background: #111;
+            border: 1px solid #555;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: black;
+            color: lime;
+            border: 1px solid #555;
+            margin-top: 10px;
+            font-family: monospace;
+            padding: 5px;
+        }
+        button {
+            margin-top: 5px;
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #33ff33;
+        }
+        .suggestion-list div {
+            padding: 2px 5px;
+            cursor: pointer;
+        }
+        .suggestion-list .selected {
+            background: #33ff33;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+<div id="terminal"></div>
+<div id="suggestions" class="suggestion-list"></div>
+
+<script>
+const terminalDiv = document.getElementById("terminal");
+const suggestionsDiv = document.getElementById("suggestions");
+
+let history = [];
+let historyIndex = -1;
+let cwd = "";
+let suggestionIndex = -1;
+let currentSuggestions = [];
+
+// -------------------
+// Add new input line
+// -------------------
+function addInputLine() {
+    const lineDiv = document.createElement("div");
+    lineDiv.classList.add("input-line");
+
+    const promptSpan = document.createElement("span");
+    promptSpan.classList.add("prompt");
+    promptSpan.textContent = cwd + " $ ";
+
+    const inputEl = document.createElement("input");
+    inputEl.classList.add("cmd-input");
+    inputEl.autofocus = true;
+
+    lineDiv.appendChild(promptSpan);
+    lineDiv.appendChild(inputEl);
+    terminalDiv.appendChild(lineDiv);
+    inputEl.focus();
+
+    inputEl.addEventListener("input", fetchSuggestions);
+
+    inputEl.addEventListener("keydown", function(e) {
+        const items = Array.from(suggestionsDiv.children);
+
+        // Ctrl+L to clear
+        if(e.ctrlKey && e.key.toLowerCase() === "l"){
+            terminalDiv.innerHTML = "";
+            suggestionsDiv.style.display = "none";
+            addInputLine();
+            e.preventDefault();
+            return;
+        }
+
+        // Arrow key navigation for suggestions
+        if((e.key === "ArrowDown" || e.key === "ArrowUp") && items.length > 0){
+            if(e.key === "ArrowDown"){
+                suggestionIndex = (suggestionIndex + 1) % items.length;
+            } else if(e.key === "ArrowUp"){
+                suggestionIndex = (suggestionIndex - 1 + items.length) % items.length;
+            }
+            highlightSuggestion(items);
+            e.preventDefault();
+            return;
+        }
+
+        // Enter key
+        if(e.key === "Enter"){
+            if(suggestionIndex >= 0){  // select suggestion
+                inputEl.value = items[suggestionIndex].innerText;
+            }
+            suggestionsDiv.style.display = "none";
+            currentSuggestions = [];
+            suggestionIndex = -1;
+            runCommand(inputEl.value, lineDiv);
+            e.preventDefault();
+            return;
+        }
+
+        // History navigation
+        if(e.key === "ArrowUp" && currentSuggestions.length === 0){
+            if(historyIndex > 0){ historyIndex--; inputEl.value = history[historyIndex]; }
+            e.preventDefault();
+        } else if(e.key === "ArrowDown" && currentSuggestions.length === 0){
+            if(historyIndex < history.length - 1){ historyIndex++; inputEl.value = history[historyIndex]; }
+            else { historyIndex = history.length; inputEl.value = ""; }
+            e.preventDefault();
+        }
+    });
+}
+
+// -------------------
+// Fetch suggestions
+// -------------------
+async function fetchSuggestions(e){
+    const typed = e.target.value;
+    if(!typed){
+        suggestionsDiv.style.display = "none";
+        currentSuggestions = [];
+        suggestionIndex = -1;
+        return;
+    }
+
+    const res = await fetch("/suggest", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({typed})
+    });
+    const data = await res.json();
+    currentSuggestions = data.suggestions || [];
+    suggestionIndex = -1;
+
+    if(currentSuggestions.length === 0){
+        suggestionsDiv.style.display = "none";
+        return;
+    }
+
+    // Position suggestions
+    const rect = e.target.getBoundingClientRect();
+    suggestionsDiv.style.top = rect.bottom + window.scrollY + "px";
+    suggestionsDiv.style.left = rect.left + window.scrollX + "px";
+    suggestionsDiv.style.width = rect.width + "px";
+    suggestionsDiv.innerHTML = "";
+
+    currentSuggestions.forEach((s, i)=>{
+        const div = document.createElement("div");
+        div.innerText = s;
+        div.addEventListener("click", ()=>{
+            e.target.value = s;
+            suggestionsDiv.style.display = "none";
+            currentSuggestions = [];
+            suggestionIndex = -1;
+        });
+        suggestionsDiv.appendChild(div);
+    });
+
+    suggestionsDiv.style.display = "block";
+}
+
+// -------------------
+// Highlight suggestion
+// -------------------
+function highlightSuggestion(items){
+    items.forEach((el,i)=> el.classList.toggle("selected", i===suggestionIndex));
+}
+
+// -------------------
+// Run command
+// -------------------
+async function runCommand(command, lineDiv){
+    if(!command) return;
+    history.push(command);
+    historyIndex = history.length;
+
+    const inputEl = lineDiv.querySelector("input");
+    if(inputEl) inputEl.remove();
+    lineDiv.innerHTML += `<span style="color:yellow;">${command}</span>`;
+
+    suggestionsDiv.style.display = "none";
+
+    const res = await fetch("/run", {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({command})
+    });
+    const data = await res.json();
+    cwd = data.cwd || cwd;
+
+    if(data.output === "__CLEAR_SCREEN__"){
+        terminalDiv.innerHTML = "";
+    } else if(data.output.startsWith("__OPEN_EDITOR__")){
+        const [_, filename, content] = data.output.split("::");
+        const editorDiv = document.createElement("div");
+        editorDiv.innerHTML = `<textarea id="vimEditor">${content}</textarea><br>
+            <button onclick="saveFile('${filename}')">Save & Close</button>`;
+        terminalDiv.appendChild(editorDiv);
+    } else if(data.output.startsWith("__WRITE_MODE__")){
+        const [_, filename, mode] = data.output.split("::");
+        const msgDiv = document.createElement("div");
+        msgDiv.style.color = "lime";
+        msgDiv.innerText = `Editing file ${filename} (mode: ${mode})`;
+        terminalDiv.appendChild(msgDiv);
+    } else {
+        const outDiv = document.createElement("div");
+        outDiv.innerHTML = data.output.replace(/\n/g,"<br>");
+        terminalDiv.appendChild(outDiv);
+    }
+
+    terminalDiv.scrollTop = terminalDiv.scrollHeight;
+    addInputLine();
+}
+
+// -------------------
+// Save Vim file
+// -------------------
+async function saveFile(filename){
+    const content = document.getElementById("vimEditor").value;
+    const res = await fetch("/run", {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({command:`__save__ ${filename} ${btoa(content)}`})
+    });
+    const data = await res.json();
+    const outDiv = document.createElement("div");
+    outDiv.style.color = "lime";
+    outDiv.innerText = data.output;
+    terminalDiv.appendChild(outDiv);
+    document.getElementById("vimEditor").remove();
+    terminalDiv.scrollTop = terminalDiv.scrollHeight;
+}
+
+// -------------------
+// Initialize terminal
+// -------------------
+async function initTerminal(){
+    const res = await fetch("/run", {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({command:"pwd"})
+    });
+    const data = await res.json();
+    cwd = data.cwd || "";
+    addInputLine();
+}
+initTerminal();
+</script>
+</body>
+</html>

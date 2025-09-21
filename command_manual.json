@@ -1,0 +1,70 @@
+{
+  "touch": {
+    "description": "Create a new empty file.",
+    "usage": "touch <filename>"
+  },
+  "mkdir": {
+    "description": "Create a new directory.",
+    "usage": "mkdir <directory_name>"
+  },
+  "rmdir": {
+    "description": "Remove an empty directory.",
+    "usage": "rmdir <directory_name>"
+  },
+  "rm": {
+    "description": "Remove a file or directory.",
+    "usage": "rm <filename_or_directory>"
+  },
+  "cp": {
+    "description": "Copy files or directories.",
+    "usage": "cp <source> <destination>"
+  },
+  "mv": {
+    "description": "Move or rename files or directories.",
+    "usage": "mv <source> <destination>"
+  },
+  "rename": {
+    "description": "Rename a file or directory.",
+    "usage": "rename <old_name> <new_name>"
+  },
+  "cat": {
+    "description": "View file content or append/write content.",
+    "usage": "cat <filename> (display)\ncat > <filename> (write)\ncat >> <filename> (append)"
+  },
+  "vim": {
+    "description": "Open file in editor mode (frontend simulated).",
+    "usage": "vim <filename>"
+  },
+  "__save__": {
+    "description": "Internal command to save file from editor.",
+    "usage": "__save__ <filename> <base64_content>"
+  },
+  "chmod": {
+    "description": "Change file permissions.",
+    "usage": "chmod <mode> <filename>"
+  },
+  "cpu": {
+    "description": "Display current CPU usage percentage.",
+    "usage": "cpu"
+  },
+  "mem": {
+    "description": "Display memory usage percentage and amount.",
+    "usage": "mem"
+  },
+  "ps": {
+    "description": "List active processes (PID and name).",
+    "usage": "ps"
+  },
+  "history": {
+    "description": "Show the last 20 commands entered.",
+    "usage": "history"
+  },
+  "clear": {
+    "description": "Clear the terminal screen.",
+    "usage": "clear"
+  },
+  "pwd": {
+    "description": "Show the current working directory.",
+    "usage": "pwd"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "create a file named test.txt": "touch test.txt",
+  "create file test.txt": "touch test.txt",
+  "make a new file called test.txt": "touch test.txt",
+  "create a directory called dir1": "mkdir dir1",
+  "make folder dir1": "mkdir dir1",
+  "list all files": "ls",
+  "show files": "ls",
+  "show directory contents": "ls",
+  "delete file test.txt": "rm test.txt",
+  "remove file test.txt": "rm test.txt",
+  "delete folder dir1": "rmdir dir1",
+  "remove directory dir1": "rmdir dir1",
+  "copy sample.txt to dir1": "cp sample.txt dir1/",
+  "copy file sample.txt to dir1": "cp sample.txt dir1/",
+  "move to folder dir1": "cd dir1",
+  "change directory to dir1": "cd dir1",
+  "clear the terminal": "clear",
+  "append content to sample.txt": "cat >> sample.txt",
+  "show content of sample.txt": "cat sample.txt"
+}

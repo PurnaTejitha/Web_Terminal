@@ -1,0 +1,11 @@
+{
+  "t": ["touch"],
+  "m": ["mem", "mkdir", "mv"],
+  "c": ["cat", "chmod", "clear", "cp"],
+  "r": ["rename", "rm", "rmdir"],
+  "l": ["ls"],
+  "v": ["vim"],
+  "_": ["__save__"],
+  "p": ["ps", "pwd"]
+
+}
